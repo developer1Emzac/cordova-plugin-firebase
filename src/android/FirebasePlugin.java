@@ -27,6 +27,12 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import android.support.annotation.NonNull;
+
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,6 +50,14 @@ public class FirebasePlugin extends CordovaPlugin {
 
     private static WeakReference<CallbackContext> notificationCallbackContext;
     private static WeakReference<CallbackContext> tokenRefreshCallbackContext;
+	
+    // [START declare_auth]
+    private FirebaseAuth mAuth;
+    // [END declare_auth]
+
+    // [START declare_auth_listener]
+    private FirebaseAuth.AuthStateListener mAuthListener;
+    // [END declare_auth_listener]
 
     @Override
     protected void pluginInitialize() {
@@ -52,6 +66,7 @@ public class FirebasePlugin extends CordovaPlugin {
             public void run() {
                 Log.d(TAG, "Starting Firebase plugin");
                 mFirebaseAnalytics = FirebaseAnalytics.getInstance(context);
+				startAuth(context);
             }
         });
     }
@@ -116,7 +131,22 @@ public class FirebasePlugin extends CordovaPlugin {
             if (args.length() > 1) this.setDefaults(callbackContext, args.getJSONObject(0), args.getString(1));
             else this.setDefaults(callbackContext, args.getJSONObject(0), null);
             return true;
-        }
+        } else if (action.equals("createAccount")) {
+			mAuth.addAuthStateListener(mAuthListener);
+			this.createAccount(callbackContext);
+			return true;
+		} else if (action.equals("login")) {
+			mAuth.addAuthStateListener(mAuthListener);
+			this.login(callbackContext);
+			return true;
+		} else if (action.equals("logout")) {
+			mAuth.addAuthStateListener(mAuthListener);
+			this.logout(callbackContext);
+			return true;
+		} else if (action.equals("isLogin")) {
+			this.isLogin(callbackContext);
+			return true;
+		}
         return false;
     }
 
@@ -477,4 +507,114 @@ public class FirebasePlugin extends CordovaPlugin {
         }
         return map;
     }
+	
+	public void startAuth(Context context) {
+		// [START initialize_auth]
+		mAuth = FirebaseAuth.getInstance();
+		// [END initialize_auth]
+
+		// [START auth_state_listener]
+		mAuthListener = new FirebaseAuth.AuthStateListener() {
+			@Override
+			public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+				FirebaseUser user = firebaseAuth.getCurrentUser();
+				if (user != null) {
+					// User is signed in
+					Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+				} else {
+					// User is signed out
+					Log.d(TAG, "onAuthStateChanged:signed_out");
+				}
+			}
+		};
+		// [END auth_state_listener]
+	}
+	
+	private void createAccount(final CallbackContext callbackContext) {
+        // [START create_user_with_email]
+        mAuth.createUserWithEmailAndPassword("desarrollo1@emzac.com", "deadpool")
+                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        Log.d(TAG, "createUserWithEmail:onComplete:" + task.isSuccessful());
+
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        if (!task.isSuccessful()) {
+							Log.w(TAG, "signInWithEmail:failed", task.getException());
+							callbackContext.error("No Funciono");
+                        } else {
+							callbackContext.success();
+						}
+						
+						if (mAuthListener != null) {
+							Log.d(TAG, "signInWithEmail:removeListener");
+							mAuth.removeAuthStateListener(mAuthListener);
+						}
+                    }
+                });
+        // [END create_user_with_email]
+	}
+	
+	private void login(final CallbackContext callbackContext) {
+		Log.d(TAG, "login");
+        // [START sign_in_with_email]
+        mAuth.signInWithEmailAndPassword("desarrollo1@emzac.com", "deadpool")
+                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        Log.d(TAG, "signInWithEmail:onComplete:" + task.isSuccessful());
+
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "signInWithEmail:failed", task.getException());
+							callbackContext.error("No Funciono");
+                        } else {
+							callbackContext.success();
+						}
+						
+						if (mAuthListener != null) {
+							Log.d(TAG, "signInWithEmail:removeListener");
+							mAuth.removeAuthStateListener(mAuthListener);
+						}
+                    }
+                });
+        // [END sign_in_with_email]
+	}
+	
+	private void logout(final CallbackContext callbackContext) {
+		Log.d(TAG, "logout");
+		try {
+			FirebaseAuth.getInstance().signOut();
+			callbackContext.success();
+		} catch (Exception e) {
+			callbackContext.error("No Funciono");
+		}
+		
+		if (mAuthListener != null) {
+			Log.d(TAG, "signInWithEmail:removeListener");
+			mAuth.removeAuthStateListener(mAuthListener);
+		}
+	}
+	
+	private void isLogin(final CallbackContext callbackContext) {
+		Log.d(TAG, "isLogin");
+		try {
+			FirebaseUser user = mAuth.getCurrentUser();
+			if (user != null) {
+				// User is signed in
+				Log.d(TAG, "onAuthState:signed_in:" + user.getUid());
+				callbackContext.success();
+			} else {
+				// User is signed out
+				Log.d(TAG, "onAuthState:signed_out");
+				callbackContext.error("No logeado");
+			}
+		} catch (Exception e) {
+			callbackContext.error(e.getMessage());
+		}
+	}
 }

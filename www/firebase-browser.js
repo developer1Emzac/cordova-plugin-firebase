@@ -71,3 +71,19 @@ exports.setConfigSettings = function (settings, success, error) {
 exports.setDefaults = function (defaults, namespace, success, error) {
     success();
 };
+
+exports.createAccount = function (success, error) {
+    success();
+};
+
+exports.login = function (success, error) {
+    success();
+};
+
+exports.logout = function (success, error) {
+    success();
+};
+
+exports.isLogin = function (success, error) {
+    success();
+};
