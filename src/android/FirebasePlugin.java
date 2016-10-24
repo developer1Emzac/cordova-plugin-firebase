@@ -666,7 +666,7 @@ public class FirebasePlugin extends CordovaPlugin {
 		return object;
 	}
 	
-	private JSONObject authUserInfo(FirebaseUser user) {
+	private JSONObject authUserInfo(FirebaseUser user) throws JSONException {
 		JSONObject object = new JSONObject();
 		object.put("displayName", user.getDisplayName());
 		object.put("email", user.getEmail());
