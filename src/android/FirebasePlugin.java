@@ -133,11 +133,11 @@ public class FirebasePlugin extends CordovaPlugin {
             return true;
         } else if (action.equals("createAccount")) {
 			mAuth.addAuthStateListener(mAuthListener);
-			this.createAccount(callbackContext);
+			this.createAccount(callbackContext, args.getString(0), args.getString(1));
 			return true;
 		} else if (action.equals("login")) {
 			mAuth.addAuthStateListener(mAuthListener);
-			this.login(callbackContext);
+			this.login(callbackContext, args.getString(0), args.getString(1));
 			return true;
 		} else if (action.equals("logout")) {
 			mAuth.addAuthStateListener(mAuthListener);
@@ -530,9 +530,9 @@ public class FirebasePlugin extends CordovaPlugin {
 		// [END auth_state_listener]
 	}
 	
-	private void createAccount(final CallbackContext callbackContext) {
+	private void createAccount(final CallbackContext callbackContext, final String email, final String password) {
         // [START create_user_with_email]
-        mAuth.createUserWithEmailAndPassword("desarrollo1@emzac.com", "deadpool")
+        mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
@@ -542,10 +542,27 @@ public class FirebasePlugin extends CordovaPlugin {
                         // the auth state listener will be notified and logic to handle the
                         // signed in user can be handled in the listener.
                         if (!task.isSuccessful()) {
-							Log.w(TAG, "signInWithEmail:failed", task.getException());
-							callbackContext.error("No Funciono");
+							Log.w(TAG, "createAccount:failed", task.getException());
+							try {
+								String exceptionName = task.getException().getClass().getSimpleName();
+								callbackContext.error(authError(exceptionName));
+							} catch (Exception e2) {
+								callbackContext.error(e2.getMessage());
+							}
                         } else {
-							callbackContext.success();
+							try {
+								FirebaseUser user = mAuth.getCurrentUser();
+								JSONObject object = new JSONObject();
+								object.put("displayName", user.getDisplayName());
+								object.put("email", user.getEmail());
+								object.put("isAnonymous", user.isAnonymous());
+								object.put("photoURL", user.getPhotoUrl());
+								object.put("uid", user.getUid());
+								//object.put("emailVerified", user.emailVerified());
+								callbackContext.success(object);
+							} catch (Exception e) {
+								callbackContext.error(e.getMessage());
+							}
 						}
 						
 						if (mAuthListener != null) {
@@ -557,10 +574,10 @@ public class FirebasePlugin extends CordovaPlugin {
         // [END create_user_with_email]
 	}
 	
-	private void login(final CallbackContext callbackContext) {
+	private void login(final CallbackContext callbackContext, final String email, final String password) {
 		Log.d(TAG, "login");
         // [START sign_in_with_email]
-        mAuth.signInWithEmailAndPassword("desarrollo1@emzac.com", "deadpool")
+        mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
@@ -571,13 +588,29 @@ public class FirebasePlugin extends CordovaPlugin {
                         // signed in user can be handled in the listener.
                         if (!task.isSuccessful()) {
                             Log.w(TAG, "signInWithEmail:failed", task.getException());
-							callbackContext.error("No Funciono");
+							try {
+								String exceptionName = task.getException().getClass().getSimpleName();
+								callbackContext.error(authError(exceptionName));
+							} catch (Exception e2) {
+								callbackContext.error(e2.getMessage());
+							}
                         } else {
-							callbackContext.success();
+							try {
+								FirebaseUser user = mAuth.getCurrentUser();
+								JSONObject object = new JSONObject();
+								object.put("displayName", user.getDisplayName());
+								object.put("email", user.getEmail());
+								object.put("isAnonymous", user.isAnonymous());
+								object.put("photoURL", user.getPhotoUrl());
+								object.put("uid", user.getUid());
+								//object.put("emailVerified", user.emailVerified());
+								callbackContext.success(object);
+							} catch (Exception e) {
+								callbackContext.error(e.getMessage());
+							}
 						}
 						
 						if (mAuthListener != null) {
-							Log.d(TAG, "signInWithEmail:removeListener");
 							mAuth.removeAuthStateListener(mAuthListener);
 						}
                     }
@@ -595,7 +628,6 @@ public class FirebasePlugin extends CordovaPlugin {
 		}
 		
 		if (mAuthListener != null) {
-			Log.d(TAG, "signInWithEmail:removeListener");
 			mAuth.removeAuthStateListener(mAuthListener);
 		}
 	}
@@ -617,4 +649,32 @@ public class FirebasePlugin extends CordovaPlugin {
 			callbackContext.error(e.getMessage());
 		}
 	}
+	
+	private JSONObject authError(String exceptionName) throws JSONException {
+		JSONObject object = new JSONObject();
+		String codeName;
+		if ( exceptionName.equals("FirebaseAuthInvalidCredentialsException") ) {
+			codeName = "auth/wrong-password";
+		} else if ( exceptionName.equals("FirebaseAuthInvalidUserException") ) {
+			codeName = "auth/user-not-found";
+		} else if ( exceptionName.equals("FirebaseAuthUserCollisionException") ) {
+			codeName = "auth/email-already-in-use";
+		} else {
+			codeName = exceptionName;
+		}
+		object.put("code", codeName);
+		return object;
+	}
+	
+	private JSONObject authUserInfo(FirebaseUser user) {
+		JSONObject object = new JSONObject();
+		object.put("displayName", user.getDisplayName());
+		object.put("email", user.getEmail());
+		object.put("isAnonymous", user.isAnonymous());
+		object.put("photoURL", user.getPhotoUrl());
+		object.put("uid", user.getUid());
+		//object.put("emailVerified", user.emailVerified());
+		return object;
+	}
+	
 }

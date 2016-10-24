@@ -72,18 +72,36 @@ exports.setDefaults = function (defaults, namespace, success, error) {
     success();
 };
 
-exports.createAccount = function (success, error) {
-    success();
+exports.createAccount = function (email, password, success, error) {
+	firebase.auth().createUserWithEmailAndPassword(email, password).then(function(user){
+		success(user);
+	}).catch(function(dataerror) {
+		error(dataerror);
+	});
 };
 
-exports.login = function (success, error) {
-    success();
+exports.login = function (email, password, success, error) {
+	firebase.auth().signInWithEmailAndPassword(email, password).then(function(user){
+		success(user);
+	}).catch(function(dataerror) {
+		error(dataerror);
+	});
 };
 
 exports.logout = function (success, error) {
-    success();
+	firebase.auth().signOut().then(function() {
+		success();
+	}, function(dataerror) {
+		error(dataerror);
+	});
 };
 
 exports.isLogin = function (success, error) {
-    success();
+	var user = firebase.auth().currentUser;
+
+	if (user) {
+	  success();
+	} else {
+	  error();
+	}
 };

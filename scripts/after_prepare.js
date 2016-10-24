@@ -86,3 +86,20 @@ if (directoryExists("platforms/android")) {
     }
   }
 }
+
+if (directoryExists("platforms/browser")) {
+  var paths = ["firebase-config.js", "platforms/browser/www/plugins/cordova-plugin-firebase/www/firebase-config.js"];
+
+  for (var i = 0; i < paths.length; i++) {
+    if (fileExists(paths[i])) {
+      try {
+        var contents = fs.readFileSync(paths[i]).toString();
+        fs.writeFileSync("platforms/browser/www/plugins/cordova-plugin-firebase/www/firebase-config.js", contents)
+      } catch(err) {
+        process.stdout.write(err);
+      }
+
+      break;
+    }
+  }
+}

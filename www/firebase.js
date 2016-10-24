@@ -104,12 +104,12 @@ exports.setDefaults = function (defaults, namespace, success, error) {
     exec(success, error, "FirebasePlugin", "setDefaults", args);
 };
 
-exports.createAccount = function (success, error) {
-    exec(success, error, "FirebasePlugin", "createAccount", []);
+exports.createAccount = function (email, password, success, error) {
+    exec(success, error, "FirebasePlugin", "createAccount", [email, password]);
 };
 
-exports.login = function (success, error) {
-    exec(success, error, "FirebasePlugin", "login", []);
+exports.login = function (email, password, success, error) {
+    exec(success, error, "FirebasePlugin", "login", [email, password]);
 };
 
 exports.logout = function (success, error) {
